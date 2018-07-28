@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RadioGroup xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    android:orientation="vertical">
+
+    <RadioButton
+        android:id="@+id/radio_sort_by_popular"
+        style="@style/RadioBoxMovieSortOrderStyle"
+        android:text="@string/popular"
+        android:checked="true"
+        android:onClick="onMovieSortOrderChanged"/>
+
+    <RadioButton
+        android:id="@+id/radio_sort_by_top_rated"
+        style="@style/RadioBoxMovieSortOrderStyle"
+        android:text="@string/top_rated"
+        android:onClick="onMovieSortOrderChanged"/>
+</RadioGroup>
