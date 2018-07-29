@@ -2,6 +2,7 @@ package moviesapp.udacity.com.moviesapp;
 
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -42,7 +43,7 @@ import moviesapp.udacity.com.moviesapp.api.model.Movie;
 import moviesapp.udacity.com.moviesapp.util.SharedPrefsUtil;
 import retrofit2.Response;
 
-public class MainActivity extends AppCompatActivity implements MovieFavouriteEntityRepository.DatabaseOperationCallback {
+public class MainActivity extends AppCompatActivity implements MovieFavouriteEntityRepository.DatabaseOperationCallback, MoviesGridRecyclerViewAdapter.MovieGridItemListener {
 
     @BindView(R.id.toolbar)
     Toolbar toolbar;
@@ -74,7 +75,7 @@ public class MainActivity extends AppCompatActivity implements MovieFavouriteEnt
         setSupportActionBar(toolbar);
 
         mRecyclerViewMovies.setLayoutManager(new GridLayoutManager(getApplicationContext(), 2));
-        adapter = new MoviesGridRecyclerViewAdapter(getApplicationContext(), new ArrayList<Movie>());
+        adapter = new MoviesGridRecyclerViewAdapter(getApplicationContext(), new ArrayList<Movie>(), this);
         mRecyclerViewMovies.setAdapter(adapter);
 
         movieFavouriteViewModelFactory = new MovieFavouriteViewModelFactory(getApplicationContext(), this);
@@ -344,5 +345,14 @@ public class MainActivity extends AppCompatActivity implements MovieFavouriteEnt
     @Override
     public void onError(String message) {
 
+    }
+
+    @Override
+    public void onItemSelected(Movie movie) {
+        Intent intent = new Intent(this, MovieDetailsActivity.class);
+        Bundle extras = new Bundle();
+        extras.putParcelable(MovieDetailsActivity.ARG_MOVIE_PARCEL, movie);
+        intent.putExtras(extras);
+        startActivity(intent);
     }
 }

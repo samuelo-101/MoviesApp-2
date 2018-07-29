@@ -25,12 +25,14 @@ public class MoviesGridRecyclerViewAdapter extends RecyclerView.Adapter<MoviesGr
 
     private final Context mContext;
     private List<Movie> mMovies;
+    private MovieGridItemListener mMovieGridItemListener;
     private final String imageBaseUrl;
     private final String defaultImageSize;
 
-    public MoviesGridRecyclerViewAdapter(Context context, List<Movie> movies) {
+    public MoviesGridRecyclerViewAdapter(Context context, List<Movie> movies, MovieGridItemListener movieGridItemListener) {
         this.mContext = context;
         this.mMovies = movies;
+        this.mMovieGridItemListener = movieGridItemListener;
         this.imageBaseUrl = context.getString(R.string.api_movie_image_base_uri);
         this.defaultImageSize = context.getString(R.string.api_default_image_size);
     }
@@ -54,11 +56,7 @@ public class MoviesGridRecyclerViewAdapter extends RecyclerView.Adapter<MoviesGr
         holder.mImageViewMovieImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(mContext, MovieDetailsActivity.class);
-                Bundle extras = new Bundle();
-                extras.putParcelable(MovieDetailsActivity.ARG_MOVIE_PARCEL, movie);
-                intent.putExtras(extras);
-                mContext.startActivity(intent);
+                mMovieGridItemListener.onItemSelected(movie);
             }
         });
     }
@@ -93,5 +91,9 @@ public class MoviesGridRecyclerViewAdapter extends RecyclerView.Adapter<MoviesGr
             super(itemView);
             ButterKnife.bind(this, itemView);
         }
+    }
+
+    public interface MovieGridItemListener {
+        public void onItemSelected(Movie movie);
     }
 }
