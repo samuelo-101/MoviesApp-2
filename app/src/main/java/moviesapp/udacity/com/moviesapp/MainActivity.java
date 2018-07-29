@@ -1,7 +1,10 @@
 package moviesapp.udacity.com.moviesapp;
 
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -16,7 +19,9 @@ import android.widget.ProgressBar;
 import android.widget.RadioButton;
 
 import java.net.ConnectException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -28,12 +33,16 @@ import moviesapp.udacity.com.moviesapp.adapter.MoviesGridRecyclerViewAdapter;
 import moviesapp.udacity.com.moviesapp.api.model.response.ErrorResponse;
 import moviesapp.udacity.com.moviesapp.api.model.response.FetchMoviesResponse;
 import moviesapp.udacity.com.moviesapp.api.service.MoviesApiServiceHelper;
+import moviesapp.udacity.com.moviesapp.db.entity.MovieFavouriteEntity;
+import moviesapp.udacity.com.moviesapp.db.factory.MovieFavouriteViewModelFactory;
+import moviesapp.udacity.com.moviesapp.db.repo.MovieFavouriteEntityRepository;
+import moviesapp.udacity.com.moviesapp.db.viewmodel.MovieFavouriteViewModel;
 import moviesapp.udacity.com.moviesapp.util.ApiUtil;
 import moviesapp.udacity.com.moviesapp.api.model.Movie;
 import moviesapp.udacity.com.moviesapp.util.SharedPrefsUtil;
 import retrofit2.Response;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements MovieFavouriteEntityRepository.DatabaseOperationCallback {
 
     @BindView(R.id.toolbar)
     Toolbar toolbar;
@@ -51,6 +60,10 @@ public class MainActivity extends AppCompatActivity {
 
     private final CompositeDisposable disposable = new CompositeDisposable();
 
+    private MovieFavouriteViewModelFactory movieFavouriteViewModelFactory;
+    private MovieFavouriteViewModel movieFavouriteViewModel;
+    private Observer<List<MovieFavouriteEntity>> movieFavouritesObserver;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,12 +77,10 @@ public class MainActivity extends AppCompatActivity {
         adapter = new MoviesGridRecyclerViewAdapter(getApplicationContext(), new ArrayList<Movie>());
         mRecyclerViewMovies.setAdapter(adapter);
 
-        setupUIBasedOnOrderPreference();
-    }
+        movieFavouriteViewModelFactory = new MovieFavouriteViewModelFactory(getApplicationContext(), this);
+        movieFavouriteViewModel = ViewModelProviders.of(this, movieFavouriteViewModelFactory).get(MovieFavouriteViewModel.class);
 
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
+        setupUIBasedOnOrderPreference();
     }
 
     @Override
@@ -91,10 +102,12 @@ public class MainActivity extends AppCompatActivity {
             View dialogView = inflater.inflate(R.layout.movie_sort_order_options, null);
             RadioButton radioButtonSortByPopular = dialogView.findViewById(R.id.radio_sort_by_popular);
             RadioButton radioButtonSortByTopRated = dialogView.findViewById(R.id.radio_sort_by_top_rated);
+            RadioButton radioButtonSortByFavourites = dialogView.findViewById(R.id.radio_sort_by_favourite);
 
-            boolean isSortByPopular = SharedPrefsUtil.getBoolean(getApplicationContext(), getString(R.string.shared_prefs_sort_order_key));
-            radioButtonSortByPopular.setChecked(isSortByPopular);
-            radioButtonSortByTopRated.setChecked(!isSortByPopular);
+            String userSortOrderPreference = SharedPrefsUtil.getString(getApplicationContext(), getString(R.string.shared_prefs_sort_order_key));
+            radioButtonSortByPopular.setChecked(userSortOrderPreference.equals(getString(R.string.sort_popular_option)));
+            radioButtonSortByTopRated.setChecked(userSortOrderPreference.equals(getString(R.string.sort_top_rated_option)));
+            radioButtonSortByFavourites.setChecked(userSortOrderPreference.equals(getString(R.string.sort_favourites_option)));
 
             alertDialogSortOrder.setView(dialogView);
             alertDialogSortOrder.show();
@@ -132,32 +145,63 @@ public class MainActivity extends AppCompatActivity {
                     disposable.add(
                             getFetchTopRatedMoviesObservable()
                     );
-                SharedPrefsUtil.putBoolean(getApplicationContext(), getString(R.string.shared_prefs_sort_order_key), !checked);
+                SharedPrefsUtil.putString(getApplicationContext(), getString(R.string.shared_prefs_sort_order_key), getString(R.string.sort_top_rated_option));
+                break;
+            case R.id.radio_sort_by_favourite:
+                SharedPrefsUtil.putString(getApplicationContext(), getString(R.string.shared_prefs_sort_order_key), getString(R.string.sort_favourites_option));
+                setupUserFavouriteMovies();
+                showLoadingIndicator(false);
                 break;
             case R.id.radio_sort_by_popular:
             default:
                 disposable.add(
                         getFetchPopularMoviesObservable()
                 );
-                SharedPrefsUtil.putBoolean(getApplicationContext(), getString(R.string.shared_prefs_sort_order_key), checked);
+                SharedPrefsUtil.putString(getApplicationContext(), getString(R.string.shared_prefs_sort_order_key), getString(R.string.sort_popular_option));
                 break;
         }
 
         alertDialogSortOrder.dismiss();
     }
 
+    private void setupUserFavouriteMovies() {
+        Snackbar.make(mRecyclerViewMovies, getString(R.string.displaying_by_favourites), Snackbar.LENGTH_LONG).show();
+        movieFavouritesObserver = new Observer<List<MovieFavouriteEntity>>() {
+            @Override
+            public void onChanged(@Nullable List<MovieFavouriteEntity> movieFavouriteEntities) {
+                String userSortOrderPreference = SharedPrefsUtil.getString(getApplicationContext(), getString(R.string.shared_prefs_sort_order_key));
+                String sortOrderFavourites = getString(R.string.sort_favourites_option);
+                if (userSortOrderPreference.equals(sortOrderFavourites)) {
+                    adapter.setMoviesFromFavouritesEntity(movieFavouriteEntities);
+                }
+            }
+        };
+        movieFavouriteViewModel.getMovieFavourites().observe(this, movieFavouritesObserver);
+    }
+
     private void setupUIBasedOnOrderPreference() {
         showLoadingIndicator(true);
 
-        boolean isSortByPopular = SharedPrefsUtil.getBoolean(getApplicationContext(), getString(R.string.shared_prefs_sort_order_key));
-        if(isSortByPopular) {
+        boolean hasActiveObservers = movieFavouriteViewModel.getMovieFavourites().hasActiveObservers();
+
+        String userSortOrderPreference = SharedPrefsUtil.getString(getApplicationContext(), getString(R.string.shared_prefs_sort_order_key));
+        if (userSortOrderPreference.equals(getString(R.string.sort_popular_option))) {
+            if(hasActiveObservers) {
+                movieFavouriteViewModel.getMovieFavourites().removeObserver(movieFavouritesObserver);
+            }
             disposable.add(
                     getFetchPopularMoviesObservable()
             );
-        } else {
+        } else if (userSortOrderPreference.equals(getString(R.string.sort_top_rated_option))) {
+            if(hasActiveObservers) {
+                movieFavouriteViewModel.getMovieFavourites().removeObserver(movieFavouritesObserver);
+            }
             disposable.add(
                     getFetchTopRatedMoviesObservable()
             );
+        } else {
+            setupUserFavouriteMovies();
+            showLoadingIndicator(false);
         }
     }
 
@@ -184,7 +228,7 @@ public class MainActivity extends AppCompatActivity {
                     public void onError(Throwable e) {
                         e.printStackTrace();
                         showLoadingIndicator(false);
-                        if (e instanceof ConnectException) {
+                        if (e instanceof ConnectException || e instanceof UnknownHostException) {
                             showConnectionFailedErrorMessage();
                         } else {
                             showGenericErrorMessage();
@@ -212,7 +256,7 @@ public class MainActivity extends AppCompatActivity {
                     public void onError(Throwable e) {
                         e.printStackTrace();
                         showLoadingIndicator(false);
-                        if (e instanceof ConnectException) {
+                        if (e instanceof ConnectException || e instanceof UnknownHostException) {
                             showConnectionFailedErrorMessage();
                         } else {
                             showGenericErrorMessage();
@@ -285,5 +329,20 @@ public class MainActivity extends AppCompatActivity {
         }
         mAlertDialogApplicationMessage = builder.create();
         mAlertDialogApplicationMessage.show();
+    }
+
+    @Override
+    public void onSuccess() {
+
+    }
+
+    @Override
+    public void onIsExistingSuccess(boolean isExisting) {
+
+    }
+
+    @Override
+    public void onError(String message) {
+
     }
 }

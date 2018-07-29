@@ -1,10 +1,14 @@
 package moviesapp.udacity.com.moviesapp;
 
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.BottomSheetBehavior;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
@@ -24,16 +28,21 @@ import java.util.Locale;
 import butterknife.BindString;
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 import moviesapp.udacity.com.moviesapp.api.model.Movie;
+import moviesapp.udacity.com.moviesapp.db.repo.MovieFavouriteEntityRepository;
 import moviesapp.udacity.com.moviesapp.fragment.MovieTrailersFragment;
 
-public class MovieDetailsActivity extends AppCompatActivity implements MovieTrailersFragment.OnFragmentInteractionListener {
+public class MovieDetailsActivity extends AppCompatActivity implements MovieTrailersFragment.OnFragmentInteractionListener, MovieFavouriteEntityRepository.DatabaseOperationCallback {
 
     public static final String ARG_MOVIE_PARCEL = "MovieDetailsActivity_ARG_MOVIE_PARCEL";
     private Movie movie;
 
     @BindView(R.id.toolbar)
     Toolbar toolbar;
+
+    @BindView(R.id.fab_toggle_favourite)
+    FloatingActionButton mFabToggleFavourite;
 
     @BindView(R.id.imageView_backdrop)
     ImageView mImageViewBackdrop;
@@ -59,6 +68,9 @@ public class MovieDetailsActivity extends AppCompatActivity implements MovieTrai
     @BindView(R.id.relative_layout_view_trailer_list)
     RelativeLayout mRelativeLayoutViewTrailerList;
 
+    @BindView(R.id.textView_overview)
+    TextView mTextViewOverview;
+
     private BottomSheetBehavior bottomSheetBehavior;
 
     @BindString(R.string.api_movie_image_base_uri)
@@ -66,6 +78,9 @@ public class MovieDetailsActivity extends AppCompatActivity implements MovieTrai
 
     @BindString(R.string.api_default_image_size)
     String defaultImageSize;
+
+    private MovieFavouriteEntityRepository movieFavouriteEntityRepository;
+    private boolean isMovieFavourite = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +92,8 @@ public class MovieDetailsActivity extends AppCompatActivity implements MovieTrai
 
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        movieFavouriteEntityRepository = new MovieFavouriteEntityRepository(getApplicationContext(), this);
 
         setupUI();
     }
@@ -98,7 +115,8 @@ public class MovieDetailsActivity extends AppCompatActivity implements MovieTrai
 
         mTextViewUserRating.setText(String.valueOf(movie.getVote_average()));
         setReleaseMonthAndYearFromDateString(movie.getRelease_date());
-        mTextViewOriginalTitle.setText(movie.getOriginal_title());
+        mTextViewOriginalTitle.setText(movie.getTitle());
+        mTextViewOverview.setText(movie.getOverview());
 
         bottomSheetBehavior = BottomSheetBehavior.from(mLinearLayoutTrailersContainer);
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
@@ -110,6 +128,8 @@ public class MovieDetailsActivity extends AppCompatActivity implements MovieTrai
                 bottomSheetBehavior.setState(sheetBehaviorState == BottomSheetBehavior.STATE_COLLAPSED ?  BottomSheetBehavior.STATE_EXPANDED : BottomSheetBehavior.STATE_COLLAPSED);
             }
         });
+
+        movieFavouriteEntityRepository.isExistingById(movie.getId());
 
         FragmentManager fm = getSupportFragmentManager();
         FragmentTransaction transaction = fm.beginTransaction();
@@ -138,9 +158,8 @@ public class MovieDetailsActivity extends AppCompatActivity implements MovieTrai
             SimpleDateFormat monthFormat = new SimpleDateFormat("MMM", Locale.getDefault());
             SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy", Locale.getDefault());
 
-            Date parsedReleaseDate = null;
             try {
-                parsedReleaseDate = releaseDateFormat.parse(releaseDate);
+                Date parsedReleaseDate = releaseDateFormat.parse(releaseDate);
                 mTextViewReleaseMonth.setText(monthFormat.format(parsedReleaseDate));
                 mTextViewReleaseYear.setText(yearFormat.format(parsedReleaseDate));
             } catch (ParseException e) {
@@ -152,4 +171,46 @@ public class MovieDetailsActivity extends AppCompatActivity implements MovieTrai
         }
     }
 
+    @OnClick(R.id.fab_toggle_favourite)
+    void toggleFavouriteOnClickListener(View view) {
+        if(isMovieFavourite) {
+            movieFavouriteEntityRepository.deleteById(movie.getId());
+            Snackbar.make(mTextViewOriginalTitle, getString(R.string.removed_from_favourites), Snackbar.LENGTH_LONG).show();
+        } else {
+            movieFavouriteEntityRepository.insert(MovieFavouriteEntityRepository.fromMovie(movie));
+            Snackbar.make(mTextViewOriginalTitle, getString(R.string.added_to_favourites), Snackbar.LENGTH_LONG).show();
+        }
+        isMovieFavourite = !isMovieFavourite;
+        updateFavouriteIndicator(isMovieFavourite);
+    }
+
+    private void updateFavouriteIndicator(boolean isSetToFavourite) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            mFabToggleFavourite.setImageDrawable(isSetToFavourite ? getResources().getDrawable(R.drawable.ic_star_gold, getApplicationContext().getTheme())
+            : getResources().getDrawable(R.drawable.ic_star_white, getApplicationContext().getTheme()));
+        } else {
+            mFabToggleFavourite.setImageDrawable(isSetToFavourite ? getResources().getDrawable(R.drawable.ic_star_gold) :
+                    getResources().getDrawable(R.drawable.ic_star_white));
+        }
+    }
+
+    @Override
+    public void onSuccess() {
+
+    }
+
+    @Override
+    public void onIsExistingSuccess(final boolean isExisting) {
+        isMovieFavourite = isExisting;
+        updateFavouriteIndicator(isExisting);
+    }
+
+    @Override
+    public void onError(String message) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(getString(R.string.generic_error_title));
+        builder.setMessage(message);
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
+    }
 }

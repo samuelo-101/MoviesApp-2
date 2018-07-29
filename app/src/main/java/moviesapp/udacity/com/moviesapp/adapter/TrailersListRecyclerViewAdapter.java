@@ -1,27 +1,23 @@
 package moviesapp.udacity.com.moviesapp.adapter;
 
-import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
 import moviesapp.udacity.com.moviesapp.R;
 import moviesapp.udacity.com.moviesapp.api.model.Video;
 
 public class TrailersListRecyclerViewAdapter extends RecyclerView.Adapter<TrailersListRecyclerViewAdapter.ViewHolder> {
 
-    private Context mContext;
     private List<Video> mVideos;
     private TrailersListItemListener mTrailersListItemListener;
 
-    public TrailersListRecyclerViewAdapter(Context context, List<Video> videos, TrailersListItemListener trailersListItemListener) {
-        this.mContext = context;
+    public TrailersListRecyclerViewAdapter(List<Video> videos, TrailersListItemListener trailersListItemListener) {
         this.mVideos = videos;
         this.mTrailersListItemListener = trailersListItemListener;
     }
@@ -41,7 +37,7 @@ public class TrailersListRecyclerViewAdapter extends RecyclerView.Adapter<Traile
         holder.parentView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mTrailersListItemListener.onTrailerClick(video.getId());
+                mTrailersListItemListener.onTrailerClick(video.getKey());
             }
         });
     }
@@ -64,11 +60,11 @@ public class TrailersListRecyclerViewAdapter extends RecyclerView.Adapter<Traile
     }
 
     public interface TrailersListItemListener {
-        void onTrailerClick(String id);
+        void onTrailerClick(String youtubeKey);
     }
 
     public void setVideos(List<Video> videos) {
-        this.mVideos = videos;
+        this.mVideos = videos == null ? new ArrayList<Video>() : videos;
         notifyDataSetChanged();
     }
 

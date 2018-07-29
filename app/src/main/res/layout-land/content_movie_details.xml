@@ -30,9 +30,9 @@
             android:id="@+id/textView_user_rating"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="8dp"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
+            android:layout_marginLeft="40dp"
+            android:layout_marginStart="40dp"
+            android:layout_marginTop="60dp"
             android:textAppearance="@style/TextAppearance.AppCompat.Display2"
             app:layout_constraintStart_toEndOf="@+id/imageView_poster"
             app:layout_constraintTop_toTopOf="parent"
@@ -52,7 +52,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="@string/ten_value"
+            android:text="@string/value_ten"
             android:textAppearance="@style/TextAppearance.AppCompat.Medium"
             app:layout_constraintBottom_toBottomOf="@+id/textView2"
             app:layout_constraintStart_toEndOf="@+id/textView2"
@@ -63,26 +63,26 @@
             android:id="@+id/textView_release_year"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="8dp"
-            android:layout_marginStart="8dp"
+            android:layout_marginEnd="184dp"
+            android:layout_marginRight="184dp"
             android:gravity="bottom|start"
             android:textAppearance="@style/TextAppearance.AppCompat.Large"
             app:layout_constraintBottom_toBottomOf="@+id/imageView_poster"
-            app:layout_constraintStart_toEndOf="@+id/imageView_poster"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textView_release_month"
-            app:layout_constraintVertical_bias="1.0"
+            app:layout_constraintVertical_bias="0.0"
             tools:text="2015" />
 
         <TextView
             android:id="@+id/textView_release_month"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="8dp"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="32dp"
+            android:layout_marginEnd="170dp"
+            android:layout_marginRight="170dp"
             android:textAppearance="@style/TextAppearance.AppCompat.Display1"
-            app:layout_constraintStart_toEndOf="@+id/imageView_poster"
-            app:layout_constraintTop_toBottomOf="@+id/textView_user_rating"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/textView_release_year"
+            app:layout_constraintTop_toTopOf="@+id/textView_user_rating"
             tools:text="May" />
 
         <TextView
@@ -113,7 +113,5 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textView_original_title"
             tools:text="Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged." />
-
     </android.support.constraint.ConstraintLayout>
-
 </android.support.v4.widget.NestedScrollView>

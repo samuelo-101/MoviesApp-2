@@ -6,6 +6,8 @@ import android.os.Parcelable;
 import java.util.ArrayList;
 import java.util.List;
 
+import moviesapp.udacity.com.moviesapp.db.entity.MovieFavouriteEntity;
+
 public class Movie implements Parcelable {
 
     private String poster_path;
@@ -22,6 +24,19 @@ public class Movie implements Parcelable {
     private int vote_count;
     private boolean video;
     private double vote_average;
+
+    public Movie(MovieFavouriteEntity movieFavouriteEntity) {
+        this.poster_path = movieFavouriteEntity.getPosterPath();
+        this.adult = movieFavouriteEntity.isAdult();
+        this.overview = movieFavouriteEntity.getOverview();
+        this.release_date = movieFavouriteEntity.getReleaseDate();
+        this.id = movieFavouriteEntity.getId();
+        this.original_title = movieFavouriteEntity.getOriginalTitle();
+        title = movieFavouriteEntity.getTitle();
+        backdrop_path = movieFavouriteEntity.getBackdropPath();
+        vote_count = movieFavouriteEntity.getVoteCount();
+        vote_average = movieFavouriteEntity.getVoteAverage();
+    }
 
     Movie(Parcel in) {
         poster_path = in.readString();

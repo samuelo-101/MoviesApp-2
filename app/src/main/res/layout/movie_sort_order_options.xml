@@ -17,4 +17,10 @@
         style="@style/RadioBoxMovieSortOrderStyle"
         android:text="@string/top_rated"
         android:onClick="onMovieSortOrderChanged"/>
+
+    <RadioButton
+        android:id="@+id/radio_sort_by_favourite"
+        style="@style/RadioBoxMovieSortOrderStyle"
+        android:text="@string/favourite"
+        android:onClick="onMovieSortOrderChanged"/>
 </RadioGroup>

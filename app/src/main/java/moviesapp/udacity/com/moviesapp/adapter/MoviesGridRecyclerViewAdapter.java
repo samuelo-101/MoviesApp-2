@@ -11,6 +11,7 @@ import android.widget.ImageView;
 
 import com.squareup.picasso.Picasso;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import butterknife.BindView;
@@ -18,6 +19,7 @@ import butterknife.ButterKnife;
 import moviesapp.udacity.com.moviesapp.MovieDetailsActivity;
 import moviesapp.udacity.com.moviesapp.R;
 import moviesapp.udacity.com.moviesapp.api.model.Movie;
+import moviesapp.udacity.com.moviesapp.db.entity.MovieFavouriteEntity;
 
 public class MoviesGridRecyclerViewAdapter extends RecyclerView.Adapter<MoviesGridRecyclerViewAdapter.ViewHolder> {
 
@@ -71,6 +73,17 @@ public class MoviesGridRecyclerViewAdapter extends RecyclerView.Adapter<MoviesGr
         notifyDataSetChanged();
     }
 
+    public void setMoviesFromFavouritesEntity(List<MovieFavouriteEntity> movieFavouriteEntities) {
+        if(movieFavouriteEntities == null) {
+            setMovies(new ArrayList<Movie>());
+        } else {
+            this.mMovies.clear();
+            for (MovieFavouriteEntity movieFavouriteEntity : movieFavouriteEntities) {
+                this.mMovies.add(new Movie(movieFavouriteEntity));
+            }
+            notifyDataSetChanged();
+        }
+    }
     class ViewHolder extends RecyclerView.ViewHolder {
 
         @BindView(R.id.imageView_movie_image)

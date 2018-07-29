@@ -32,7 +32,6 @@
 
         <TextView
             android:clickable="false"
-            android:id="@+id/textView_trailers_container"
             android:layout_centerInParent="true"
             android:layout_width="wrap_content"
             android:layout_height="@dimen/trailers_bottom_sheet_height"

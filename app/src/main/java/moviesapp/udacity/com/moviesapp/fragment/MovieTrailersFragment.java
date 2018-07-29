@@ -1,10 +1,10 @@
 package moviesapp.udacity.com.moviesapp.fragment;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
@@ -17,7 +17,6 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import java.net.ConnectException;
 import java.util.ArrayList;
 
 import butterknife.BindView;
@@ -29,7 +28,6 @@ import io.reactivex.schedulers.Schedulers;
 import moviesapp.udacity.com.moviesapp.R;
 import moviesapp.udacity.com.moviesapp.adapter.TrailersListRecyclerViewAdapter;
 import moviesapp.udacity.com.moviesapp.api.model.Video;
-import moviesapp.udacity.com.moviesapp.api.model.response.FetchMoviesResponse;
 import moviesapp.udacity.com.moviesapp.api.model.response.FetchVideosResponse;
 import moviesapp.udacity.com.moviesapp.api.service.MoviesApiServiceHelper;
 import retrofit2.Response;
@@ -96,7 +94,7 @@ public class MovieTrailersFragment extends Fragment implements TrailersListRecyc
             this.movieId = getArguments().getInt(ARG_MOVIE_ID);
         }
 
-        adapter = new TrailersListRecyclerViewAdapter(getContext(), new ArrayList<Video>(), this);
+        adapter = new TrailersListRecyclerViewAdapter(new ArrayList<Video>(), this);
     }
 
     @Override
@@ -119,6 +117,7 @@ public class MovieTrailersFragment extends Fragment implements TrailersListRecyc
             }
         });
 
+        hideLoadFailedErrorMessage();
         showLoadingIndicator(true);
         disposable.add(
                 getFetchVideosObservable()
@@ -186,8 +185,8 @@ public class MovieTrailersFragment extends Fragment implements TrailersListRecyc
     }
 
     @Override
-    public void onTrailerClick(String id) {
-
+    public void onTrailerClick(String youtubeKey) {
+        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.youtube_base_url_with_query_id) + youtubeKey)));
     }
 
     private void showLoadingIndicator(boolean showLoading) {
