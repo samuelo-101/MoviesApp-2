@@ -12,11 +12,11 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import java.net.ConnectException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 import butterknife.BindView;
@@ -25,11 +25,13 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
+import moviesapp.udacity.com.moviesapp.BuildConfig;
 import moviesapp.udacity.com.moviesapp.R;
 import moviesapp.udacity.com.moviesapp.adapter.TrailersListRecyclerViewAdapter;
 import moviesapp.udacity.com.moviesapp.api.model.Video;
 import moviesapp.udacity.com.moviesapp.api.model.response.FetchVideosResponse;
 import moviesapp.udacity.com.moviesapp.api.service.MoviesApiServiceHelper;
+import moviesapp.udacity.com.moviesapp.util.DialogUtil;
 import retrofit2.Response;
 
 /**
@@ -52,12 +54,6 @@ public class MovieTrailersFragment extends Fragment implements TrailersListRecyc
     @BindView(R.id.recyclerView_trailers)
     RecyclerView mRecyclerViewTrailers;
 
-    @BindView(R.id.linearLayout_trailers_state)
-    LinearLayout mLinearLayoutTrailersLoadState;
-
-    @BindView(R.id.button_trailers_load_state)
-    ImageButton mImageButtonTapToRetry;
-
     @BindView(R.id.textView_trailers_load_state)
     TextView mTextViewLoadState;
 
@@ -78,7 +74,6 @@ public class MovieTrailersFragment extends Fragment implements TrailersListRecyc
      * @param movieId Parameter 1.
      * @return A new instance of fragment MovieTrailersFragment.
      */
-    // TODO: Rename and change types and number of parameters
     public static MovieTrailersFragment newInstance(int movieId) {
         MovieTrailersFragment fragment = new MovieTrailersFragment();
         Bundle args = new Bundle();
@@ -108,16 +103,6 @@ public class MovieTrailersFragment extends Fragment implements TrailersListRecyc
         mRecyclerViewTrailers.addItemDecoration(new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL));
         mRecyclerViewTrailers.setAdapter(adapter);
 
-        mImageButtonTapToRetry.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                disposable.add(
-                        getFetchVideosObservable()
-                );
-            }
-        });
-
-        hideLoadFailedErrorMessage();
         showLoadingIndicator(true);
         disposable.add(
                 getFetchVideosObservable()
@@ -129,7 +114,7 @@ public class MovieTrailersFragment extends Fragment implements TrailersListRecyc
     @NonNull
     private DisposableSingleObserver<Response<FetchVideosResponse>> getFetchVideosObservable() {
         return MoviesApiServiceHelper.getInstance(getContext())
-                .fetchMoviesVideos(movieId, getString(R.string.api_key))
+                .fetchMoviesVideos(movieId, BuildConfig.MOVIES_API_KEY)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeWith(new DisposableSingleObserver<Response<FetchVideosResponse>>() {
@@ -146,7 +131,6 @@ public class MovieTrailersFragment extends Fragment implements TrailersListRecyc
                                 adapter.clearVideos();
                             }
                         }
-                        hideLoadFailedErrorMessage();
                         showLoadingIndicator(false);
                     }
 
@@ -154,7 +138,11 @@ public class MovieTrailersFragment extends Fragment implements TrailersListRecyc
                     public void onError(Throwable e) {
                         e.printStackTrace();
                         showLoadingIndicator(false);
-                        showLoadFailedErrorMessage();
+                        if (e instanceof ConnectException || e instanceof UnknownHostException) {
+                            DialogUtil.showAlertDialogMessage(MovieTrailersFragment.this.getActivity(), getString(R.string.api_connection_error_title), getString(R.string.api_connection_error_message));
+                        } else {
+                            DialogUtil.showAlertDialogMessage(MovieTrailersFragment.this.getActivity(), getString(R.string.api_connection_error_title), getString(R.string.error_failed_to_load_trailers));
+                        }
                     }
                 });
     }
@@ -192,29 +180,18 @@ public class MovieTrailersFragment extends Fragment implements TrailersListRecyc
     private void showLoadingIndicator(boolean showLoading) {
         mProgressBarMovieTrailers.setVisibility(showLoading ? View.VISIBLE : View.GONE);
         mRecyclerViewTrailers.setVisibility(showLoading ? View.GONE : View.VISIBLE);
-    }
-
-    private void showLoadFailedErrorMessage() {
-        mLinearLayoutTrailersLoadState.setVisibility(View.VISIBLE);
-        mImageButtonTapToRetry.setVisibility(View.VISIBLE);
-        mTextViewLoadState.setVisibility(View.VISIBLE);
-        mTextViewLoadState.setText(getString(R.string.error_failed_to_load_trailers));
-        mProgressBarMovieTrailers.setVisibility(View.GONE);
-        mRecyclerViewTrailers.setVisibility(View.GONE);
+        hideNoTrailersMessage();
     }
 
     private void showNoTrailersMessage() {
-        mLinearLayoutTrailersLoadState.setVisibility(View.VISIBLE);
-        mImageButtonTapToRetry.setVisibility(View.GONE);
         mTextViewLoadState.setVisibility(View.VISIBLE);
         mTextViewLoadState.setText(getString(R.string.no_trailers_for_movie));
         mProgressBarMovieTrailers.setVisibility(View.GONE);
         mRecyclerViewTrailers.setVisibility(View.GONE);
     }
 
-
-    private void hideLoadFailedErrorMessage() {
-        mLinearLayoutTrailersLoadState.setVisibility(View.GONE);
+    private void hideNoTrailersMessage() {
+        mTextViewLoadState.setVisibility(View.GONE);
     }
 
     /**

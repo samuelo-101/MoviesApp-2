@@ -13,9 +13,9 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
 
@@ -31,6 +31,7 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
 import moviesapp.udacity.com.moviesapp.adapter.MoviesGridRecyclerViewAdapter;
+import moviesapp.udacity.com.moviesapp.api.model.Movie;
 import moviesapp.udacity.com.moviesapp.api.model.response.ErrorResponse;
 import moviesapp.udacity.com.moviesapp.api.model.response.FetchMoviesResponse;
 import moviesapp.udacity.com.moviesapp.api.service.MoviesApiServiceHelper;
@@ -39,7 +40,7 @@ import moviesapp.udacity.com.moviesapp.db.factory.MovieFavouriteViewModelFactory
 import moviesapp.udacity.com.moviesapp.db.repo.MovieFavouriteEntityRepository;
 import moviesapp.udacity.com.moviesapp.db.viewmodel.MovieFavouriteViewModel;
 import moviesapp.udacity.com.moviesapp.util.ApiUtil;
-import moviesapp.udacity.com.moviesapp.api.model.Movie;
+import moviesapp.udacity.com.moviesapp.util.DialogUtil;
 import moviesapp.udacity.com.moviesapp.util.SharedPrefsUtil;
 import retrofit2.Response;
 
@@ -55,7 +56,6 @@ public class MainActivity extends AppCompatActivity implements MovieFavouriteEnt
     RecyclerView mRecyclerViewMovies;
 
     private AlertDialog alertDialogSortOrder;
-    private AlertDialog mAlertDialogApplicationMessage;
 
     private MoviesGridRecyclerViewAdapter adapter;
 
@@ -124,14 +124,8 @@ public class MainActivity extends AppCompatActivity implements MovieFavouriteEnt
         if (disposable != null && !disposable.isDisposed()) {
             disposable.dispose();
         }
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (mAlertDialogApplicationMessage != null && mAlertDialogApplicationMessage.isShowing()) {
-            mAlertDialogApplicationMessage.dismiss();
-        } else {
-            super.onBackPressed();
+        if(movieFavouriteViewModel.getMovieFavourites().hasObservers()) {
+            movieFavouriteViewModel.getMovieFavourites().removeObserver(movieFavouritesObserver);
         }
     }
 
@@ -214,7 +208,7 @@ public class MainActivity extends AppCompatActivity implements MovieFavouriteEnt
     @NonNull
     private DisposableSingleObserver<Response<FetchMoviesResponse>> getFetchPopularMoviesObservable() {
         return MoviesApiServiceHelper.getInstance(getApplicationContext())
-                .fetchPopularMovies(getString(R.string.api_key))
+                .fetchPopularMovies(BuildConfig.MOVIES_API_KEY)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeWith(new DisposableSingleObserver<Response<FetchMoviesResponse>>() {
@@ -230,11 +224,10 @@ public class MainActivity extends AppCompatActivity implements MovieFavouriteEnt
                         e.printStackTrace();
                         showLoadingIndicator(false);
                         if (e instanceof ConnectException || e instanceof UnknownHostException) {
-                            showConnectionFailedErrorMessage();
+                            DialogUtil.showAlertDialogMessage(MainActivity.this, getString(R.string.api_connection_error_title), getString(R.string.api_connection_error_message));
                         } else {
-                            showGenericErrorMessage();
+                            DialogUtil.showGenericErrorMessage(MainActivity.this);
                         }
-
                     }
                 });
     }
@@ -242,7 +235,7 @@ public class MainActivity extends AppCompatActivity implements MovieFavouriteEnt
     @NonNull
     private DisposableSingleObserver<Response<FetchMoviesResponse>> getFetchTopRatedMoviesObservable() {
         return MoviesApiServiceHelper.getInstance(getApplicationContext())
-                .fetchTopRatedMovies(getString(R.string.api_key))
+                .fetchTopRatedMovies(BuildConfig.MOVIES_API_KEY)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeWith(new DisposableSingleObserver<Response<FetchMoviesResponse>>() {
@@ -258,9 +251,9 @@ public class MainActivity extends AppCompatActivity implements MovieFavouriteEnt
                         e.printStackTrace();
                         showLoadingIndicator(false);
                         if (e instanceof ConnectException || e instanceof UnknownHostException) {
-                            showConnectionFailedErrorMessage();
+                            DialogUtil.showConnectionFailedErrorMessage(MainActivity.this);
                         } else {
-                            showGenericErrorMessage();
+                            DialogUtil.showGenericErrorMessage(MainActivity.this);
                         }
 
                     }
@@ -277,59 +270,17 @@ public class MainActivity extends AppCompatActivity implements MovieFavouriteEnt
                 }
                 break;
             case 401:
-                showUnauthorizedErrorMessage();
+                DialogUtil.showUnauthorizedErrorMessage(MainActivity.this);
                 break;
             case 400:
             case 404:
                 ErrorResponse errorResponse = ApiUtil.getApiErrorFromResponse(response);
-                showApiErrorFromErrorResponse(errorResponse);
+                DialogUtil.showApiErrorFromErrorResponse(MainActivity.this, errorResponse);
                 break;
             default:
-                showGenericErrorMessage();
+                DialogUtil.showGenericErrorMessage(MainActivity.this);
                 break;
         }
-    }
-
-    private void showConnectionFailedErrorMessage() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(getString(R.string.api_connection_error_title));
-        builder.setMessage(getString(R.string.api_connection_error_message));
-        if (mAlertDialogApplicationMessage != null && mAlertDialogApplicationMessage.isShowing()) {
-            mAlertDialogApplicationMessage.dismiss();
-        }
-        mAlertDialogApplicationMessage = builder.create();
-        mAlertDialogApplicationMessage.show();
-    }
-
-    private void showUnauthorizedErrorMessage() {
-        showDialogMessage(getString(R.string.api_generic_error_title), getString(R.string.api_unauthorized_error_message));
-    }
-
-    private void showGenericErrorMessage() {
-        showDialogMessage(getString(R.string.api_generic_error_title), getString(R.string.api_generic_error_message));
-    }
-
-    private void showApiErrorFromErrorResponse(ErrorResponse errorResponse) {
-        if (errorResponse == null) {
-            showGenericErrorMessage();
-        } else {
-            String message = new StringBuilder().append(errorResponse.getStatus_message())
-                    .append(" (Code: ")
-                    .append(errorResponse.getStatus_code())
-                    .append(")").toString();
-            showDialogMessage(getString(R.string.api_generic_error_title), message);
-        }
-    }
-
-    private void showDialogMessage(String title, String message) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(title);
-        builder.setMessage(message);
-        if (mAlertDialogApplicationMessage != null && mAlertDialogApplicationMessage.isShowing()) {
-            mAlertDialogApplicationMessage.dismiss();
-        }
-        mAlertDialogApplicationMessage = builder.create();
-        mAlertDialogApplicationMessage.show();
     }
 
     @Override

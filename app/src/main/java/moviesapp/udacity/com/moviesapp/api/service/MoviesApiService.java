@@ -1,6 +1,7 @@
 package moviesapp.udacity.com.moviesapp.api.service;
 
 import io.reactivex.Single;
+import moviesapp.udacity.com.moviesapp.api.model.response.FetchMovieReviewsResponse;
 import moviesapp.udacity.com.moviesapp.api.model.response.FetchMoviesResponse;
 import moviesapp.udacity.com.moviesapp.api.model.response.FetchVideosResponse;
 import retrofit2.Response;
@@ -18,4 +19,7 @@ public interface MoviesApiService {
 
     @GET("{movie_id}/videos")
     Single<Response<FetchVideosResponse>> fetchMoviesVideos(@Path("movie_id") int movieId, @Query("api_key") String apiKey);
+
+    @GET("{movie_id}/reviews")
+    Single<Response<FetchMovieReviewsResponse>> fetchMovieReviews(@Path("movie_id") int movieId, @Query("api_key") String apiKey);
 }

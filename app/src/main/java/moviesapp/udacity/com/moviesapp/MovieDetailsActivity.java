@@ -13,6 +13,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -31,6 +32,7 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import moviesapp.udacity.com.moviesapp.api.model.Movie;
 import moviesapp.udacity.com.moviesapp.db.repo.MovieFavouriteEntityRepository;
+import moviesapp.udacity.com.moviesapp.fragment.MovieReviewsDialogFragment;
 import moviesapp.udacity.com.moviesapp.fragment.MovieTrailersFragment;
 
 public class MovieDetailsActivity extends AppCompatActivity implements MovieTrailersFragment.OnFragmentInteractionListener, MovieFavouriteEntityRepository.DatabaseOperationCallback {
@@ -70,6 +72,9 @@ public class MovieDetailsActivity extends AppCompatActivity implements MovieTrai
 
     @BindView(R.id.textView_overview)
     TextView mTextViewOverview;
+
+    @BindView(R.id.button_view_reviews)
+    Button mButtonReviews;
 
     private BottomSheetBehavior bottomSheetBehavior;
 
@@ -169,6 +174,14 @@ public class MovieDetailsActivity extends AppCompatActivity implements MovieTrai
         } else {
             mTextViewReleaseYear.setText(getString(R.string.default_no_data_available_placeholder));
         }
+    }
+
+    @OnClick(R.id.button_view_reviews)
+    void onButtonReviewsClickListener(View view) {
+        FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+        MovieReviewsDialogFragment movieReviewsDialogFragment = MovieReviewsDialogFragment.newInstance(movie.getId());
+        movieReviewsDialogFragment.show(fragmentTransaction, MovieReviewsDialogFragment.TAG);
+        fragmentTransaction.addToBackStack(null);
     }
 
     @OnClick(R.id.fab_toggle_favourite)
