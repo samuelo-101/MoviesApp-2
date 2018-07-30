@@ -178,19 +178,16 @@ public class MainActivity extends AppCompatActivity implements MovieFavouriteEnt
         showLoadingIndicator(true);
 
         boolean hasActiveObservers = movieFavouriteViewModel.getMovieFavourites().hasActiveObservers();
+        if(hasActiveObservers) {
+            movieFavouriteViewModel.getMovieFavourites().removeObserver(movieFavouritesObserver);
+        }
 
         String userSortOrderPreference = SharedPrefsUtil.getString(getApplicationContext(), getString(R.string.shared_prefs_sort_order_key));
         if (userSortOrderPreference.equals(getString(R.string.sort_popular_option))) {
-            if(hasActiveObservers) {
-                movieFavouriteViewModel.getMovieFavourites().removeObserver(movieFavouritesObserver);
-            }
             disposable.add(
                     getFetchPopularMoviesObservable()
             );
         } else if (userSortOrderPreference.equals(getString(R.string.sort_top_rated_option))) {
-            if(hasActiveObservers) {
-                movieFavouriteViewModel.getMovieFavourites().removeObserver(movieFavouritesObserver);
-            }
             disposable.add(
                     getFetchTopRatedMoviesObservable()
             );

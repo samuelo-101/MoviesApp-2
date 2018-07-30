@@ -136,8 +136,8 @@ public class MovieDetailsActivity extends AppCompatActivity implements MovieTrai
 
         movieFavouriteEntityRepository.isExistingById(movie.getId());
 
-        FragmentManager fm = getSupportFragmentManager();
-        FragmentTransaction transaction = fm.beginTransaction();
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
         transaction.replace(R.id.frameLayout_trailers_fragment, MovieTrailersFragment.newInstance(movie.getId()));
         transaction.addToBackStack(null);
         transaction.commit();
@@ -159,9 +159,9 @@ public class MovieDetailsActivity extends AppCompatActivity implements MovieTrai
 
     private void setReleaseMonthAndYearFromDateString(String releaseDate) {
         if(!TextUtils.isEmpty(releaseDate)) {
-            SimpleDateFormat releaseDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-            SimpleDateFormat monthFormat = new SimpleDateFormat("MMM", Locale.getDefault());
-            SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy", Locale.getDefault());
+            SimpleDateFormat releaseDateFormat = new SimpleDateFormat(getString(R.string.api_release_date_format), Locale.getDefault());
+            SimpleDateFormat monthFormat = new SimpleDateFormat(getString(R.string.default_month_display_format), Locale.getDefault());
+            SimpleDateFormat yearFormat = new SimpleDateFormat(getString(R.string.default_year_display_format), Locale.getDefault());
 
             try {
                 Date parsedReleaseDate = releaseDateFormat.parse(releaseDate);
@@ -194,15 +194,15 @@ public class MovieDetailsActivity extends AppCompatActivity implements MovieTrai
             Snackbar.make(mTextViewOriginalTitle, getString(R.string.added_to_favourites), Snackbar.LENGTH_LONG).show();
         }
         isMovieFavourite = !isMovieFavourite;
-        updateFavouriteIndicator(isMovieFavourite);
+        updateFavouriteIndicator();
     }
 
-    private void updateFavouriteIndicator(boolean isSetToFavourite) {
+    private void updateFavouriteIndicator() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            mFabToggleFavourite.setImageDrawable(isSetToFavourite ? getResources().getDrawable(R.drawable.ic_star_gold, getApplicationContext().getTheme())
+            mFabToggleFavourite.setImageDrawable(isMovieFavourite ? getResources().getDrawable(R.drawable.ic_star_gold, getApplicationContext().getTheme())
             : getResources().getDrawable(R.drawable.ic_star_white, getApplicationContext().getTheme()));
         } else {
-            mFabToggleFavourite.setImageDrawable(isSetToFavourite ? getResources().getDrawable(R.drawable.ic_star_gold) :
+            mFabToggleFavourite.setImageDrawable(isMovieFavourite ? getResources().getDrawable(R.drawable.ic_star_gold) :
                     getResources().getDrawable(R.drawable.ic_star_white));
         }
     }
@@ -215,7 +215,7 @@ public class MovieDetailsActivity extends AppCompatActivity implements MovieTrai
     @Override
     public void onIsExistingSuccess(final boolean isExisting) {
         isMovieFavourite = isExisting;
-        updateFavouriteIndicator(isExisting);
+        updateFavouriteIndicator();
     }
 
     @Override

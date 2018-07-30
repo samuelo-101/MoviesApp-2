@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import java.net.ConnectException;
 import java.net.UnknownHostException;
@@ -53,6 +54,9 @@ public class MovieReviewsDialogFragment extends DialogFragment {
 
     @BindView(R.id.progressBar)
     ProgressBar progressBar;
+
+    @BindView(R.id.textView_no_ratings)
+    TextView mTextViewNoReviews;
 
     private ReviewsListRecyclerViewAdapter adapter;
 
@@ -134,6 +138,12 @@ public class MovieReviewsDialogFragment extends DialogFragment {
         mRecyclerViewReviews.setVisibility(showLoading ? View.GONE : View.VISIBLE);
     }
 
+    private void showNoResultsMessage(boolean show) {
+        mTextViewNoReviews.setVisibility(show ? View.VISIBLE : View.GONE);
+        mRecyclerViewReviews.setVisibility(show ? View.GONE : View.VISIBLE);
+        progressBar.setVisibility(show ? View.GONE : View.VISIBLE);
+    }
+
     @NonNull
     private DisposableSingleObserver<Response<FetchMovieReviewsResponse>> getFetchReviewsObservable() {
         return MoviesApiServiceHelper.getInstance(getContext()).fetchMovieReviews(movieId, BuildConfig.MOVIES_API_KEY)
@@ -160,13 +170,19 @@ public class MovieReviewsDialogFragment extends DialogFragment {
     }
 
     private void handleFetchReviewsResponse(Response<FetchMovieReviewsResponse> response) {
+        showNoResultsMessage(false);
         int responseCode = response.code();
         switch (responseCode) {
             case 200:
                 FetchMovieReviewsResponse fetchMovieReviewsResponse = response.body();
                 if (fetchMovieReviewsResponse != null) {
-                    adapter.setReviews(fetchMovieReviewsResponse.getResults());
+                    if(fetchMovieReviewsResponse.getResults() != null && fetchMovieReviewsResponse.getResults().isEmpty()) {
+                        showNoResultsMessage(true);
+                    } else {
+                        adapter.setReviews(fetchMovieReviewsResponse.getResults());
+                    }
                 }
+
                 break;
             case 401:
                 DialogUtil.showUnauthorizedErrorMessage(getActivity());
