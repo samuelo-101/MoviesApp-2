@@ -139,7 +139,6 @@ public class MovieDetailsActivity extends AppCompatActivity implements MovieTrai
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction transaction = fragmentManager.beginTransaction();
         transaction.replace(R.id.frameLayout_trailers_fragment, MovieTrailersFragment.newInstance(movie.getId()));
-        transaction.addToBackStack(null);
         transaction.commit();
     }
 
@@ -181,7 +180,6 @@ public class MovieDetailsActivity extends AppCompatActivity implements MovieTrai
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         MovieReviewsDialogFragment movieReviewsDialogFragment = MovieReviewsDialogFragment.newInstance(movie.getId());
         movieReviewsDialogFragment.show(fragmentTransaction, MovieReviewsDialogFragment.TAG);
-        fragmentTransaction.addToBackStack(null);
     }
 
     @OnClick(R.id.fab_toggle_favourite)
